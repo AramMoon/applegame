@@ -1,5 +1,4 @@
 import React from 'react'
-import * as tf from '@tensorflow/tfjs';
 import TFUtil from '../util/TFUtil'
 
 
@@ -16,10 +15,8 @@ export default function MLView() {
 
 
   const predict = async () => {
-    TFUtil.predict(169)
-    // let t = tf.tensor([1,2,3])
-    // let arr = await t.array()
-    // console.log(arr)
+    let result = await TFUtil.predict(169)
+    console.log(result)
   }
 
   return (

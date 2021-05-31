@@ -37,9 +37,8 @@ export default function ScreenView() {
       canvas.width = image.width;
       canvas.height = image.height;
       ctx.drawImage(image, 0, 0);
-      //
+      boxingCanvas(canvas)
       processingCanvas(canvas)
-      // ctx.putImageData(imageData, 0, 0, 0, 0,  image.width, image.height)
     }
   }
 
@@ -67,7 +66,85 @@ export default function ScreenView() {
     return boxs
   }
 
+  const boxingCanvas = async (canvas: HTMLCanvasElement) => {
+    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+    console.log(canvas.width, canvas.width)
+    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    let data = imageData.data
+    const cx =  canvas.width / 2
+    const cy = canvas.height / 2
+    let xlen = 0
+    let ylen = 0
+    let xs = 0
+    let xe = canvas.width
+    let ys = 0
+    let ye = canvas.height
+    for(let x = 0 ; x < canvas.width; x++) {
+      let po = (x + cy * canvas.width) * 4
+      let r = data[po]
+      let g = data[po + 1]
+      let b = data[po + 2]
+      // console.log(r,g,b)
+      if (r === 16 && g === 232 && b === 103) {
+        if (xs > 0) {
+          if (xe === canvas.width) {
+            xe = x - xlen * 1.8
+          }
+        }else {
+          xlen += 1
+        }
+      }else if(xlen > 0) {
+        if (xs > 0) {
 
+        }else{
+          xs = x + xlen * 1.4
+        }
+      }
+    }
+
+
+    for(let y = 0 ; y < canvas.height; y++) {
+      let po = (cx + y * canvas.width) * 4
+      let r = data[po]
+      let g = data[po + 1]
+      let b = data[po + 2]
+      // console.log(r,g,b)
+      if (r === 16 && g === 232 && b === 103) {
+        data[po] = 0
+        data[po + 1] = 0
+        data[po + 2] = 0
+
+        if (ys > 0) {
+          if (ye === canvas.height) {
+            ye = y - ylen * 3
+          }
+        }else {
+          ylen += 1
+        }
+      }else if(ylen > 0) {
+        if (ys > 0) {
+
+        }else{
+          ys = y + ylen * 3
+        }
+      }
+    }
+
+
+    console.log("StartX", xs, "EndX", xe)
+    console.log("StartY", ys, "EndY", ye)
+    let ww = xe-xs
+    let hh = ye-ys
+
+    let cropImageData = ctx.getImageData(xs, ys, ww, hh)
+    const tempCanvas = document.createElement('canvas')
+    tempCanvas.width = ww
+    tempCanvas.height = hh
+
+    canvas.width = 50 * 17
+    canvas.height =  500
+    ctx.putImageData(cropImageData, 0, 0, 0, 0, 50 * 17, 500)
+  }
 
   const processingCanvas = async (canvas: HTMLCanvasElement) => {
     var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
@@ -77,12 +154,12 @@ export default function ScreenView() {
 
     const xx = 17
     const yy = 10
-    const w = 49
-    const h = 50
-    const dx = 142
-    const dy = 128
+    const w = canvas.width / xx
+    const h = canvas.height / yy
+    const dx = 0
+    const dy = 0
     let map = []
-
+    console.log("Cell size", w, h)
     for (let j = 0; j < yy; j++) {
       let submap = []
       for (let i = 0; i < xx; i++) {
@@ -99,6 +176,7 @@ export default function ScreenView() {
             let b = data[po + 2]
             if (r > 220 && g > 210  && b > 210 && g - b < 10 ) {
             // if (r > 240 && g > 240  && b > 240 && g - b < 10 ) {
+              // if (r > 220 && g > 210  && b > 210 ) {
               whiteCount += 1
               tfData49_50.push(1)
               data[po] = 0
@@ -119,8 +197,8 @@ export default function ScreenView() {
           }
         }
         // ctx.putImageData(imageData, 0, 0, 0, 0, canvas.width, canvas.height)
-        console.log(i,j, whiteCount)
-        whiteCount = await TFUtil.predictNumber(tfData49_50)
+        // console.log(i,j, whiteCount)
+        // whiteCount = await TFUtil.predictNumber(tfData49_50)
         submap.push(whiteCount)
         ctx.strokeStyle = "#000";
         ctx.lineWidth = 1;
@@ -177,13 +255,16 @@ export default function ScreenView() {
 
   }
 
-  const scan = () => {
+  const scan = async () => {
     const mainVideio = document.getElementById("videoout") as HTMLVideoElement
     const canvas = outputRef.current as HTMLCanvasElement
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(mainVideio, 0, 0);
-    processingCanvas(canvas)
+    console.log("canvas Size", canvas.width, canvas.height)
+    console.log("Video Size", mainVideio.width, mainVideio.height)
+    await boxingCanvas(canvas)
+    await processingCanvas(canvas) // 
   }
 
   const stop = () => {
@@ -218,7 +299,7 @@ export default function ScreenView() {
       <button onClick={stop}>stop</button>
 
       <div className="output-image">
-        <canvas ref={outputRef} width='1600' height='800' />
+        <canvas ref={outputRef} width='1500' height='600' />
       </div>
 
       <video id="videoout" autoPlay></video>
